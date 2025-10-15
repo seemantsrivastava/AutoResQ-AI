@@ -13,7 +13,7 @@ def pd_webhook():
     """Receive PagerDuty webhook and forward to Slack."""
     payload = request.get_json(silent=True) or {}
     logger.info("Alert payload received")
-
+    logger.debug("Alert payload received:\n%s", jdump(payload))
     event_type = payload.get("event", {}).get("event_type") or payload.get("event_type", "unknown")
     incident = payload.get("event", {}).get("data") or payload.get("incident") or {}
     incident_id = incident.get("id", "N/A")
