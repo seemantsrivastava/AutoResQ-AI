@@ -3,151 +3,161 @@ import streamlit as st
 from dotenv import load_dotenv
 import pandas as pd
 
-# Optional import for FAISS
 try:
     from app.rag_engine.embeddings_faiss import build_faiss_from_docs
 except Exception:
     build_faiss_from_docs = None
 
-# ----------------------------
-# Setup
-# ----------------------------
 load_dotenv()
-DB_PATH = os.getenv("DATABASE_PATH", "../data/autoresq.db")
+DB_PATH = os.getenv("DATABASE_PATH")
 DATA_DIR = os.getenv("DATA_DIR", "rag_engine/data")
-
 st.set_page_config(page_title="AutoResQ Dashboard", layout="wide")
 
-# ----------------------------
-# ✨ Custom CSS (Glassy Look)
-# ----------------------------
 st.markdown("""
 <style>
-/* ======= GLOBAL LAYOUT ======= */
+/* ======= APP BACKGROUND ======= */
 .stApp {
-    background: radial-gradient(circle at 25% 20%, #05080D, #010304 80%);
-    color: #EAEAEA;
-    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #eef2f7 0%, #dae2ed 100%);
+    color: #1b2a3d;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* ======= GLASS PANELS ======= */
+/* ======= HEADER ======= */
+.main-header {
+    background: linear-gradient(120deg, rgba(47,85,151,0.15), rgba(47,85,151,0.05));
+    border-radius: 22px;
+    padding: 32px;
+    margin-top: 20px;
+    text-align: center;
+    box-shadow: 0 6px 24px rgba(47,85,151,0.15);
+    backdrop-filter: blur(10px);
+}
+h1 {
+    color: #2f5597;
+    font-weight: 800;
+    font-size: 2.8rem;
+    text-shadow: 0 0 8px rgba(47,85,151,0.3);
+    margin-bottom: 0.3rem;
+}
+h3 {
+    color: #3b4b61;
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin-top: 0;
+}
+p {
+    color: #4c5968;
+    font-size: 1rem;
+    margin-top: 4px;
+}
+
+/* ======= MAIN CONTAINER ======= */
 .main-container {
-    background: rgba(10, 15, 25, 0.6);
-    border: 1px solid rgba(0, 255, 255, 0.15);
-    border-radius: 20px;
-    padding: 25px 30px;
-    box-shadow: 0 0 25px rgba(0, 255, 255, 0.1);
-    backdrop-filter: blur(16px);
-    transition: 0.3s ease-in-out;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 22px;
+    padding: 28px 32px;
+    margin-top: 28px;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.18);
+    backdrop-filter: blur(14px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .main-container:hover {
-    box-shadow: 0 0 30px rgba(0,255,255,0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 48px rgba(31, 38, 135, 0.25);
 }
 
-/* ======= HEADINGS ======= */
-h1, h2, h3, h4 {
-    color: #00FFFF !important;
-    text-shadow: 0 0 10px rgba(0,255,255,0.4);
-    font-weight: 600;
-    letter-spacing: 0.5px;
+/* ======= SUBHEADERS ======= */
+.subheader {
+    color: #2f5597;
+    font-weight: 700;
+    font-size: 1.4rem;
+    text-shadow: 0 0 8px rgba(47,85,151,0.25);
+    margin-bottom: 16px;
 }
 
-/* ======= SUBTEXT ======= */
-p, label, span, div {
-    color: #C8D4D4 !important;
+/* ======= TABS ======= */
+div[data-baseweb="tab-list"] {
+    background: rgba(255,255,255,0.6);
+    border-radius: 16px;
+    box-shadow: inset 0 0 20px rgba(47,85,151,0.12);
+    padding: 8px 14px;
+    margin-bottom: 24px;
+}
+div[data-baseweb="tab"] {
+    color: #214c7c !important;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 10px 24px;
+    border-radius: 10px;
+    transition: all 0.25s ease;
+}
+div[data-baseweb="tab"]:hover {
+    background: rgba(47,85,151,0.12) !important;
+    transform: translateY(-1px);
+}
+div[data-baseweb="tab"][aria-selected="true"] {
+    background: linear-gradient(120deg, #3a6dd6 0%, #2f5597 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(47,85,151,0.4);
 }
 
-/* ======= INCIDENT DATA ======= */
-.dataframe {
-    color: #D0E7E7 !important;
-    font-weight: 500;
-}
+/* ======= DATAFRAME ======= */
 [data-testid="stDataFrame"] {
-    background: rgba(20,25,35,0.85) !important;
-    border-radius: 12px !important;
-    box-shadow: 0 0 25px rgba(0,255,255,0.08);
-    color: #E5F2F2 !important;
+    background: rgba(255,255,255,0.8) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 6px 26px rgba(47,85,151,0.08);
+    font-weight: 500;
+    font-size: 1rem !important;
 }
-
-/* Make text darker and bolder for incident details */
-div[data-testid="stMarkdownContainer"] p,
-div[data-testid="stMarkdownContainer"] code,
-div[data-testid="stMarkdownContainer"] span {
-    color: #D8E0E3 !important;
-    font-weight: 600;
+thead tr th {
+    background: rgba(47,85,151,0.15) !important;
+    color: #1d3e6b !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid rgba(47,85,151,0.4) !important;
+}
+tbody tr:hover {
+    background: rgba(47,85,151,0.08) !important;
+    transition: all 0.3s ease-in-out;
 }
 
 /* ======= BUTTONS ======= */
 .stButton>button {
-    background: linear-gradient(90deg, #00E6FF, #007BFF);
+    background: linear-gradient(90deg, #4a90e2, #357ABD);
+    color: #fff;
+    border-radius: 12px;
+    padding: 10px 22px;
+    font-weight: 700;
     border: none;
-    border-radius: 10px;
-    color: white;
-    font-weight: 500;
-    box-shadow: 0 0 10px rgba(0,255,255,0.3);
-    transition: 0.25s;
+    box-shadow: 0 6px 18px rgba(47,85,151,0.25);
+    transition: all 0.25s ease;
 }
 .stButton>button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(0,255,255,0.6);
-}
-
-/* ======= TAB BAR ======= */
-div[data-baseweb="tab-list"] {
-    justify-content: center;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.05);
-    box-shadow: 0 0 15px rgba(0,255,255,0.08);
-}
-div[data-baseweb="tab"] {
-    color: #00FFFF !important;
-    font-weight: 600;
-}
-div[data-baseweb="tab"]:hover {
-    background: rgba(0,255,255,0.05);
-}
-
-/* ======= CODE BLOCKS ======= */
-code {
-    color: #00E6FF !important;
-    background: rgba(255,255,255,0.03);
-    border-left: 3px solid #00FFFF;
-    padding-left: 6px;
-    border-radius: 4px;
-}
-
-/* ======= DIVIDERS ======= */
-hr, .stDivider {
-    border: none;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0,255,255,0.4), transparent);
+    background: linear-gradient(90deg, #357ABD, #4a90e2);
+    transform: translateY(-1px);
 }
 
 /* ======= SCROLLBAR ======= */
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 9px;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(0,255,255,0.3);
-    border-radius: 10px;
+    background: rgba(47,85,151,0.25);
+    border-radius: 8px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ----------------------------
-# Header
-# ----------------------------
+# ---------- Header ----------
 st.markdown("""
-<div class="main-container" style="text-align:center;">
+<div class="main-header">
     <h1>🚨 AutoResQ</h1>
     <h3>The AI-Powered Incident Copilot</h3>
-    <p style="color:#CCCCCC;">Smart Triage · Root Cause Insights · Automated Recovery</p>
+    <p>Smart Triage · Root Cause Insights · Automated Recovery</p>
 </div>
 """, unsafe_allow_html=True)
 
-# ----------------------------
-# Database Helpers
-# ----------------------------
+# ---------- Database Helpers ----------
 @st.cache_resource
 def get_conn():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -156,97 +166,39 @@ def get_conn():
 
 def load_events():
     conn = get_conn()
-    cur = conn.execute("SELECT id, received_at, event_type, summary, service, status FROM events ORDER BY id DESC")
-    return [dict(r) for r in cur.fetchall()]
+    cur = conn.execute("""
+        SELECT id, incident_id, received_at, event_type, summary, service, status 
+        FROM events ORDER BY id DESC
+    """)
+    return [dict(row) for row in cur.fetchall()]
 
-def get_event(event_id: int):
-    conn = get_conn()
-    cur = conn.execute("SELECT * FROM events WHERE id=?", (event_id,))
-    r = cur.fetchone()
-    return dict(r) if r else None
-
-def update_status(event_id: int, status: str):
-    conn = get_conn()
-    with conn:
-        conn.execute("UPDATE events SET status=? WHERE id=?", (status, event_id))
-
-def add_action(event_id: int, action: str):
-    conn = get_conn()
-    with conn:
-        conn.execute(
-            "INSERT INTO actions(event_id, action, created_at) VALUES(?,?,?)",
-            (event_id, action, datetime.datetime.utcnow().isoformat())
-        )
-
-# ----------------------------
-# Tabs for Incidents and RAG Upload
-# ----------------------------
+# ---------- Tabs ----------
 tab1, tab2 = st.tabs(["📟 Incidents", "📚 RAG Upload"])
 
-# ==========================
-# TAB 1: INCIDENTS
-# ==========================
+# ---------- TAB 1: Incidents ----------
 with tab1:
     st.markdown("<div class='main-container'>", unsafe_allow_html=True)
-    st.subheader("Recent Incidents")
+    st.markdown("<div class='subheader'>Recent Incidents</div>", unsafe_allow_html=True)
 
     events = load_events()
     if events:
         df = pd.DataFrame(events)
-        st.dataframe(df, use_container_width=True, height=280)
+        st.dataframe(df, use_container_width=True, height=340)
     else:
         st.info("No incidents yet. Trigger via webhook or manual insert.")
 
-    st.divider()
-
-    if events:
-        default_id = events[0]["id"]
-        selected_id = st.selectbox("Select Event ID", [e["id"] for e in events], index=0)
-        event = get_event(selected_id)
-        if event:
-            st.markdown(f"<h4>Event #{event['id']} – {event['summary']}</h4>", unsafe_allow_html=True)
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write("**Received At:**", event["received_at"])
-                st.write("**Event Type:**", event["event_type"])
-                st.write("**Service:**", event["service"])
-                st.write("**Status:**", event["status"])
-            with col2:
-                st.write("**Details:**")
-                st.code(event["details"] or "(none)")
-
-            st.write("**AI Suggested Plan:**")
-            st.code(event["ai_plan"] or "(none)")
-
-            st.write("**Raw JSON:**")
-            st.code(event["raw_json"] or "{}", language="json")
-
-            c1, c2, c3 = st.columns(3)
-            if c1.button("✅ Approve & Run Fix (mock)"):
-                add_action(event["id"], "RUN_FIX_MOCK")
-                update_status(event["id"], "ACTIONED")
-                st.success("Mock fix executed.")
-                st.experimental_rerun()
-            if c2.button("🟩 Mark Resolved"):
-                add_action(event["id"], "RESOLVED")
-                update_status(event["id"], "RESOLVED")
-                st.success("Marked as resolved.")
-                st.experimental_rerun()
-            if c3.button("🔁 Reopen"):
-                add_action(event["id"], "REOPEN")
-                update_status(event["id"], "NEW")
-                st.info("Reopened.")
-                st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ==========================
-# TAB 2: RAG UPLOAD
-# ==========================
+# ---------- TAB 2: RAG Upload ----------
 with tab2:
     st.markdown("<div class='main-container'>", unsafe_allow_html=True)
-    st.subheader("Upload Knowledge Docs (RAG)")
+    st.markdown("<div class='subheader'>Upload Knowledge Docs (RAG)</div>", unsafe_allow_html=True)
 
-    uploaded_files = st.file_uploader("Upload files (PDF/TXT)", type=["pdf", "txt"], accept_multiple_files=True)
+    uploaded_files = st.file_uploader(
+        "Choose files (PDF or TXT)",
+        type=["pdf", "txt"],
+        accept_multiple_files=True
+    )
 
     if uploaded_files:
         os.makedirs(DATA_DIR, exist_ok=True)
@@ -269,4 +221,5 @@ with tab2:
                 st.warning("⚠️ RAG builder not available.")
     else:
         st.info("Upload PDFs or text SOPs to enhance AI knowledge.")
+
     st.markdown("</div>", unsafe_allow_html=True)

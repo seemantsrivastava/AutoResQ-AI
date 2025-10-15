@@ -39,5 +39,5 @@ if __name__ == "__main__":
     app_instance.run(
         host="0.0.0.0",
         port=int(os.getenv("PORT", "5004")),
-        debug=(log_level == "DEBUG"),
+        debug=(log_level == "INFO"),
     )

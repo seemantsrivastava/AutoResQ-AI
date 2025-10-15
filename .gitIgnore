@@ -9,4 +9,5 @@ __pycache__/
 app/rag_engine/data/AutoResQ_Incident_SOP.pdf
 app/rag_engine/data/HIGH VOLUME or CPU USAGE SOP.txt
 app/rag_engine/data/RCA.pdf
+others/app.zip
 app.zip

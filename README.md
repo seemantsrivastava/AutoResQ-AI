@@ -10,24 +10,24 @@ Works great with **Cloudflare Tunnel (`cloudflared`)** for a public URL without 
 ---
 
 ## 🧩 Structure
-```
-autoresq_demo/
-├─ README.md
-├─ requirements.txt
-├─ .env.example
-├─ webhook_receiver.py      # Flask endpoint: /pd-webhook
-├─ db.py                    # tiny SQLite helper
-├─ streamlit_app.py         # live dashboard
-├─ gradio_live_demo.py      # optional public UI with gradio.live
-├─ scripts/
-│  ├─ run_cloudflared.txt   # copy-paste command
-│  └─ test_post.sh          # curl to send sample
-├─ sample_payloads/
-│  ├─ ping.json
-│  ├─ queue_depth.json
-│  └─ db_timeout.json
-└─ sop_docs/                # put your SOPs here (text/markdown/pdf)
-```
+
+app/
+├── main.py # Streamlit dashboard (Incidents + RAG Upload)
+├── rag_ai_engine.py # Core AI engine (RAG + LLM integration)
+├── embeddings_faiss.py # FAISS indexing (build, append, save)
+├── inspect_faiss.py # Inspect / debug FAISS index
+│
+├── routes/
+│ ├── pagerduty_routes.py # Flask webhook for PagerDuty alerts
+│ ├── slack_actions.py # Slack button + feedback interactions
+│ ├── slack_commands.py # Slack slash-command handlers
+│
+├── utils/
+│ ├── ai_utils.py # Wrapper for AI suggestion generation
+│ ├── slack_utils.py # Slack client + signature verification
+│ └── log_utils.py # Centralized logging helpers
+│
+└── rag_engine/data/ # Knowledge base (PDF, TXT, SOPs)
 
 ---
 
