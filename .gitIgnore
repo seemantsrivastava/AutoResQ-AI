@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+/.env
+/others/
+/data/
+/app/rag_engine/faiss_index_openai/
